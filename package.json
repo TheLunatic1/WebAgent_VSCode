@@ -1,0 +1,118 @@
+{
+  "name": "webagent-vscode",
+  "displayName": "WebAgent VSCode",
+  "description": "Use ChatGPT Web, Gemini Web, and Ollama as autonomous coding agents inside VS Code without API keys.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Machine Learning",
+    "Programming Languages",
+    "Other"
+  ],
+  "activationEvents": [
+    "onView:webagentSidebar",
+    "onCommand:webagent.startChat"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "webagent.startChat",
+        "title": "WebAgent: Start Chat"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "webagentContainer",
+          "title": "WebAgent",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "webagentContainer": [
+        {
+          "type": "webview",
+          "id": "webagentSidebar",
+          "name": "Chat"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "WebAgent",
+      "properties": {
+        "webagent.defaultProvider": {
+          "type": "string",
+          "default": "chatgpt",
+          "enum": [
+            "chatgpt",
+            "gemini",
+            "ollama",
+            "custom"
+          ],
+          "description": "Select the default AI provider to use."
+        },
+        "webagent.ollamaUrl": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "URL for the local Ollama instance."
+        },
+        "webagent.ollamaModel": {
+          "type": "string",
+          "default": "llama3",
+          "description": "Model to use for Ollama."
+        },
+        "webagent.customApiUrl": {
+          "type": "string",
+          "default": "http://localhost:1234/v1/chat/completions",
+          "description": "URL for Custom OpenAI-compatible Provider."
+        },
+        "webagent.customApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API Key for Custom Provider (if needed)."
+        },
+        "webagent.customModel": {
+          "type": "string",
+          "default": "local-model",
+          "description": "Model name for Custom Provider."
+        },
+        "webagent.browserProfilePath": {
+          "type": "string",
+          "default": "",
+          "description": "Custom path for the browser profile. Leave empty to use default local app data."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.80.0",
+    "@types/node": "18.x",
+    "@typescript-eslint/eslint-plugin": "^6.4.0",
+    "@typescript-eslint/parser": "^6.4.0",
+    "eslint": "^8.47.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.1.6",
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4",
+    "ts-loader": "^9.4.4"
+  },
+  "dependencies": {
+    "playwright": "^1.37.0"
+  }
+}
