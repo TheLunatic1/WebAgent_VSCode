@@ -108,10 +108,11 @@ content: your plan here
                     const result = await this.toolManager.executeTool(parsed.action); // Now awaited
                     this.onStream(`[Tool Result]: ${result}\n\n`, true);
                     
-                    prompt = `Tool executed. Result:\n${result}\nWhat is the next step? Output strictly in JSON format as specified before.`;
+                    prompt = `Tool executed. Result:\n${result}\nWhat is the next step? Output exactly ONE thought block and ONE action block using XML tags as specified before.`;
                 } else {
-                    prompt = "Error: No valid action provided. What is the next step? Output strictly in JSON.";
-                    this.onStream('\n\n[Agent Error]: No valid action provided.', true);
+                    prompt = "Error: No valid action provided. What is the next step? Output strictly using <thought> and <action> XML blocks.";
+                    // Silently retry instead of spamming user
+                    continue;
                 }
 
             } catch (e: any) {
@@ -133,11 +134,6 @@ content: your plan here
 
     private parseResponse(response: string): any {
         try {
-            // Try parsing as JSON first just in case
-            const jsonMatch = response.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-                try { return JSON.parse(jsonMatch[0]); } catch(e) {}
-            }
             
             // Bypass: Parse XML tags
             const thoughtMatch = response.match(/<thought>([\s\S]*?)<\/thought>/i);

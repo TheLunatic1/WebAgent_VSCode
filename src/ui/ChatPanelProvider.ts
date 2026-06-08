@@ -113,6 +113,7 @@ export class ChatPanelProvider implements vscode.WebviewViewProvider {
 
     private _getHtmlForWebview(webview: vscode.Webview) {
         const config = vscode.workspace.getConfiguration('webagent');
+        const defaultProvider = config.get<string>('defaultProvider', 'chatgpt');
         const ollamaUrl = config.get<string>('ollamaUrl', 'http://localhost:11434');
         const ollamaModel = config.get<string>('ollamaModel', 'llama3');
         const customUrl = config.get<string>('customApiUrl', 'http://localhost:1234/v1/chat/completions');
@@ -175,6 +176,18 @@ export class ChatPanelProvider implements vscode.WebviewViewProvider {
                     border: 1px solid var(--vscode-input-border);
                     padding: 4px 6px;
                     border-radius: 2px;
+                    width: 100%;
+                    box-sizing: border-box;
+                }
+                #active-model-info {
+                    font-size: 0.85em;
+                    color: var(--vscode-descriptionForeground);
+                    margin-bottom: 10px;
+                    text-align: center;
+                    background: var(--vscode-editorWidget-background);
+                    padding: 6px;
+                    border-radius: 4px;
+                    border: 1px solid var(--vscode-widget-border);
                 }
                 #chat-history {
                     flex: 1;
@@ -219,17 +232,19 @@ export class ChatPanelProvider implements vscode.WebviewViewProvider {
                     white-space: pre-wrap;
                     margin-top: 5px;
                 }
-                details.thought-process {
-                    margin: 0;
-                    padding: 0;
+                .thought-process {
+                    margin-top: 5px;
+                    padding: 5px;
+                    background: var(--vscode-textBlockQuote-background);
+                    border-left: 3px solid var(--vscode-textBlockQuote-border);
+                    border-radius: 3px;
                 }
-                details.thought-process summary {
+                .thought-process summary {
                     cursor: pointer;
-                    font-style: italic;
+                    font-weight: bold;
                     color: var(--vscode-descriptionForeground);
+                    opacity: 0.8;
                     user-select: none;
-                    margin: 0;
-                    padding: 0;
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
@@ -295,10 +310,10 @@ export class ChatPanelProvider implements vscode.WebviewViewProvider {
                 <div>
                     <label style="font-size: 0.8em; opacity: 0.8; display: block; margin-bottom: 2px;">Provider</label>
                     <select id="provider-select">
-                        <option value="chatgpt">ChatGPT</option>
-                        <option value="gemini">Gemini</option>
-                        <option value="ollama">Ollama</option>
-                        <option value="custom">Custom (OpenAI)</option>
+                        <option value="chatgpt" ${defaultProvider === 'chatgpt' ? 'selected' : ''}>ChatGPT</option>
+                        <option value="gemini" ${defaultProvider === 'gemini' ? 'selected' : ''}>Gemini</option>
+                        <option value="ollama" ${defaultProvider === 'ollama' ? 'selected' : ''}>Ollama</option>
+                        <option value="custom" ${defaultProvider === 'custom' ? 'selected' : ''}>Custom (OpenAI)</option>
                     </select>
                 </div>
                 <div>
@@ -312,28 +327,43 @@ export class ChatPanelProvider implements vscode.WebviewViewProvider {
                 <button id="open-browser-btn" style="padding: 4px 8px; font-size: 0.9em; height: 26px;">Browser</button>
                 <button id="settings-btn" style="padding: 4px 8px; font-size: 0.9em; height: 26px;">⚙️</button>
             </div>
+            <div id="active-model-info"></div>
             <div id="settings-panel">
-                <div class="setting-row">
-                    <label>Ollama URL</label>
-                    <input type="text" id="set-ollama-url" value="${ollamaUrl}" />
+                <div id="ollama-settings" style="display: none;">
+                    <h3 style="margin: 0 0 5px 0; font-size: 1.1em;">Ollama Setup</h3>
+                    <p style="font-size: 0.85em; opacity: 0.8; margin: 0 0 10px 0;">Run local models (e.g. qwen3-coder:30b) natively on your machine without a browser.</p>
+                    <div class="setting-row">
+                        <label>Ollama URL</label>
+                        <input type="text" id="set-ollama-url" value="${ollamaUrl}" />
+                    </div>
+                    <div class="setting-row" style="margin-top: 5px;">
+                        <label>Model Name</label>
+                        <input type="text" id="set-ollama-model" value="${ollamaModel}" />
+                    </div>
                 </div>
-                <div class="setting-row">
-                    <label>Ollama Model</label>
-                    <input type="text" id="set-ollama-model" value="${ollamaModel}" />
+                
+                <div id="custom-settings" style="display: none;">
+                    <h3 style="margin: 0 0 5px 0; font-size: 1.1em;">Custom API Setup</h3>
+                    <p style="font-size: 0.85em; opacity: 0.8; margin: 0 0 10px 0;">Connect to any OpenAI-compatible local/remote REST API (LM Studio, vLLM, etc).</p>
+                    <div class="setting-row">
+                        <label>API URL</label>
+                        <input type="text" id="set-custom-url" value="${customUrl}" />
+                    </div>
+                    <div class="setting-row" style="margin-top: 5px;">
+                        <label>API Key (Optional)</label>
+                        <input type="password" id="set-custom-key" value="${customKey}" />
+                    </div>
+                    <div class="setting-row" style="margin-top: 5px;">
+                        <label>Model Name</label>
+                        <input type="text" id="set-custom-model" value="${customModel}" />
+                    </div>
                 </div>
-                <div class="setting-row">
-                    <label>Custom API URL</label>
-                    <input type="text" id="set-custom-url" value="${customUrl}" />
+
+                <div id="browser-settings" style="display: none;">
+                    <p style="font-size: 0.85em; opacity: 0.8; margin: 0;">This provider uses an automated browser session. No API configuration required!</p>
                 </div>
-                <div class="setting-row">
-                    <label>Custom API Key</label>
-                    <input type="password" id="set-custom-key" value="${customKey}" />
-                </div>
-                <div class="setting-row">
-                    <label>Custom Model</label>
-                    <input type="text" id="set-custom-model" value="${customModel}" />
-                </div>
-                <button id="save-settings-btn" style="margin-top: 5px;">Save Settings</button>
+
+                <button id="save-settings-btn" style="margin-top: 15px; width: 100%;">Save Settings</button>
             </div>
             <div id="chat-history"></div>
             <div id="input-container">
@@ -353,14 +383,59 @@ export class ChatPanelProvider implements vscode.WebviewViewProvider {
                 const settingsBtn = document.getElementById('settings-btn');
                 const settingsPanel = document.getElementById('settings-panel');
                 const saveSettingsBtn = document.getElementById('save-settings-btn');
+                const activeModelInfo = document.getElementById('active-model-info');
                 
+                const ollamaSettings = document.getElementById('ollama-settings');
+                const customSettings = document.getElementById('custom-settings');
+                const browserSettings = document.getElementById('browser-settings');
+
                 let currentMessageElement = null;
+
+                function updateSettingsView() {
+                    const provider = providerSelect.value;
+                    ollamaSettings.style.display = 'none';
+                    customSettings.style.display = 'none';
+                    browserSettings.style.display = 'none';
+
+                    if (provider === 'ollama') {
+                        ollamaSettings.style.display = 'block';
+                    } else if (provider === 'custom') {
+                        customSettings.style.display = 'block';
+                    } else {
+                        browserSettings.style.display = 'block';
+                    }
+                }
+
+                function updateActiveModelInfo() {
+                    const provider = providerSelect.value;
+                    if (provider === 'chatgpt') {
+                        activeModelInfo.innerHTML = "Using <strong>ChatGPT</strong> (via Browser)";
+                    } else if (provider === 'gemini') {
+                        activeModelInfo.innerHTML = "Using <strong>Gemini</strong> (via Browser)";
+                    } else if (provider === 'ollama') {
+                        const m = document.getElementById('set-ollama-model').value || 'llama3';
+                        activeModelInfo.innerHTML = "Using local Ollama model: <strong>" + escapeHtml(m) + "</strong>";
+                    } else if (provider === 'custom') {
+                        const m = document.getElementById('set-custom-model').value || 'custom-model';
+                        activeModelInfo.innerHTML = "Using custom API model: <strong>" + escapeHtml(m) + "</strong>";
+                    }
+                }
+
+                providerSelect.addEventListener('change', () => {
+                    updateSettingsView();
+                    updateActiveModelInfo();
+                });
+
+                // Initialize views
+                updateSettingsView();
+                updateActiveModelInfo();
 
                 settingsBtn.addEventListener('click', () => {
                     settingsPanel.style.display = settingsPanel.style.display === 'none' ? 'flex' : 'none';
                 });
 
                 saveSettingsBtn.addEventListener('click', () => {
+                    updateActiveModelInfo();
                     vscode.postMessage({
                         type: 'saveSettings',
                         settings: {
