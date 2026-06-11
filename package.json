@@ -28,7 +28,7 @@
         {
           "id": "webagentContainer",
           "title": "WebAgent",
-          "icon": "resources/icon.svg"
+          "icon": "$(robot)"
         }
       ]
     },
