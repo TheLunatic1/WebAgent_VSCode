@@ -3,6 +3,11 @@
   "name": "WebAgent Bridge",
   "version": "1.0",
   "description": "Connects VS Code WebAgent to your active AI web sessions (ChatGPT, Gemini, etc.)",
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
   "permissions": [
     "activeTab",
     "scripting",
@@ -32,6 +37,11 @@
     }
   ],
   "action": {
-    "default_title": "WebAgent Bridge"
+    "default_title": "WebAgent Bridge",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
   }
 }
