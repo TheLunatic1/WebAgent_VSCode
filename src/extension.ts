@@ -1,8 +1,12 @@
 import * as vscode from 'vscode';
 import { ChatPanelProvider } from './ui/ChatPanelProvider';
+import { WebSocketManager } from './browser/WebSocketManager';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('WebAgent is now active!');
+
+    // Initialize WebSocket Server immediately to accept connections
+    WebSocketManager.getInstance();
 
     // Register Webview Sidebar
     const chatPanelProvider = new ChatPanelProvider(context.extensionUri, context);

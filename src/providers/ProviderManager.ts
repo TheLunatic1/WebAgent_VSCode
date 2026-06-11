@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import { AIProvider } from './AIProvider';
 import { ChatGPTProvider } from './ChatGPTProvider';
 import { GeminiProvider } from './GeminiProvider';
+import { GrokProvider } from './GrokProvider';
+import { DeepSeekProvider } from './DeepSeekProvider';
 import { OllamaProvider } from './OllamaProvider';
 import { CustomProvider } from './CustomProvider';
 
@@ -26,6 +28,12 @@ export class ProviderManager {
                 break;
             case 'gemini':
                 this.currentProvider = new GeminiProvider();
+                break;
+            case 'grok':
+                this.currentProvider = new GrokProvider();
+                break;
+            case 'deepseek':
+                this.currentProvider = new DeepSeekProvider();
                 break;
             case 'ollama':
                 const config = vscode.workspace.getConfiguration('webagent');

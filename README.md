@@ -1,68 +1,55 @@
-# WebAgent VSCode
+# WebAgent VSCode (Beta)
 
-WebAgent VSCode is an autonomous AI coding agent extension that connects directly to your existing browser sessions for ChatGPT Web, Gemini Web, and local Ollama instances. By leveraging Playwright for browser automation, it requires **no API keys** while providing full access to consumer models like ChatGPT Plus, Gemini Advanced, and local Llama instances.
+WebAgent VSCode is an autonomous AI coding agent extension that connects directly to your existing browser sessions for **ChatGPT, Gemini, Grok, and DeepSeek**. 
+
+Instead of relying on fragile browser automation or requiring expensive API keys, WebAgent uses a lightweight **Chrome Extension Bridge** to communicate seamlessly with your active web AI sessions. It acts as your autonomous co-pilot, capable of reading files, writing code, running terminal commands, and managing your workspace.
+
+## 🚧 Important: Beta Status
+WebAgent is currently in **Public Beta**. To use the web AI providers (ChatGPT, Gemini, Grok, DeepSeek), **you must manually install the companion Chrome Extension.**
 
 ## Core Features
-- **No API Keys Required**: Reuses your existing browser session.
-- **Provider System**: Supports ChatGPT Web, Gemini Web, and Ollama.
-- **Agent Loop**: Fully autonomous execution (THINK → ACT → OBSERVE).
-- **Tools Capability**: Can read, edit, delete files, run terminal commands, and perform Git operations.
-- **Safety**: Built-in approval dialogs for destructive actions.
-- **Context Management**: Gathers project summary, file tree, and open tab information.
+- **No API Keys Required**: Reuses your existing browser session and Plus/Advanced subscriptions.
+- **Provider System**: Supports ChatGPT, Gemini, Grok, DeepSeek, and local Ollama models.
+- **Agent Loop**: Fully autonomous execution (THINK → ACT → OBSERVE) with strict JSON tool usage.
+- **Tools Capability**: Can read, edit, delete files, and run terminal commands.
+- **Safety First**: Built-in approval dialogs for destructive actions.
 
-## Getting Started (Development)
+---
 
-### Requirements
-- Node.js (v18+)
-- Playwright browsers installed
-- VS Code (v1.80+)
+## 🛠️ Setup Instructions
 
-### Build Instructions
+To use WebAgent, you need to set up both the VS Code Extension and the Chrome Companion Extension.
+
+### Part 1: Install the Chrome Companion Extension
+Because WebAgent controls your web sessions, it requires a secure Chrome Extension Bridge to send prompts and read responses.
+
+1. Clone or download this repository.
+2. Open Google Chrome (or Edge/Brave) and navigate to `chrome://extensions`.
+3. Enable **Developer mode** (toggle in the top right corner).
+4. Click **Load unpacked** and select the `chrome-extension` folder located inside this repository.
+5. **CRITICAL**: Refresh any open ChatGPT, Gemini, Grok, or DeepSeek tabs you already have open so the extension can inject its script.
+
+### Part 2: Run the VS Code Extension
+*(Note: If you downloaded this from the VS Code Marketplace, you can skip to step 3).*
+
 1. Install dependencies:
    ```bash
    npm install
    ```
-2. Install Playwright browsers:
-   ```bash
-   npx playwright install chromium
-   ```
-3. Compile the extension:
-   ```bash
-   npm run compile
-   ```
-4. Press `F5` in VS Code to run the extension in the Extension Development Host.
+2. Press `F5` in VS Code to compile and launch the Extension Development Host.
+3. Open the WebAgent panel in the activity bar.
+4. Select your provider in the settings (e.g., ChatGPT, Gemini).
+5. Ensure your chosen AI provider is open in a Chrome tab and logged in.
+6. Type a prompt like: *"Write a python script that prints the fibonacci sequence and save it to my workspace"* and watch it work!
 
-### Usage
-1. Open the WebAgent panel in the activity bar.
-2. Select your provider (ChatGPT Web, Gemini Web, or Ollama).
-3. If using ChatGPT or Gemini, a browser window will open automatically. Please log in if you haven't already.
-4. Start chatting or give the agent a complex multi-step objective!
-
-## Production Deployment Guide
-
-### Packaging the Extension
-1. Install VS Code Extension Manager (vsce):
-   ```bash
-   npm install -g @vscode/vsce
-   ```
-2. Package the extension into a `.vsix` file:
-   ```bash
-   vsce package
-   ```
-   *Note: Ensure all fields like publisher, icon, and repository are set in `package.json` before packaging.*
-
-### Publishing to VS Code Marketplace
-1. Obtain a Personal Access Token (PAT) from Azure DevOps.
-2. Create a publisher on the [Visual Studio Code Marketplace](https://marketplace.visualstudio.com/manage).
-3. Publish using `vsce`:
-   ```bash
-   vsce publish
-   ```
-   *Alternatively, upload the `.vsix` file directly through the Marketplace publisher portal.*
+---
 
 ## Project Structure
-- `src/agent`: Core Agent runtime loop and memory.
-- `src/browser`: Playwright automation and context management.
-- `src/providers`: LLM integrations (ChatGPT, Gemini, Ollama).
-- `src/tools`: File system, Git, and terminal integrations.
-- `src/ui`: ChatPanelProvider and VS Code Webview logic.
+- `src/agent`: Core Agent runtime loop and strict JSON-based prompt parsing.
+- `src/browser`: WebSocket server managing the connection to the Chrome Extension.
+- `src/providers`: Integration layers routing messages to the WebSocket or local instances.
+- `src/tools`: File system and terminal integrations.
+- `chrome-extension/`: The companion Manifest V3 browser extension acting as the bridge.
+
+## Contributing
+We welcome contributions! Feel free to submit Pull Requests to add more providers, improve DOM selectors in the Chrome extension, or enhance the VS Code UI.

@@ -27,48 +27,68 @@ export class Agent {
         let prompt = `Objective: ${objective}\nWorkspace Root: ${workspaceRoot}\n\n`;
 
         if (mode === 'agent') {
-            prompt += `CRITICAL INSTRUCTION: You are not a standard cloud AI. You are the core logic engine of a VS Code Extension.
-You DO have access to the user's local filesystem and terminal through an internal bridge.
-How it works:
-1. You output an XML action block requesting a file operation or command.
-2. The VS Code extension intercepts your response, executes it locally, and sends you the result in the next message.
-3. DO NOT ever say you cannot access files, run commands, or delete directories. You HAVE ROOT ACCESS through the bridge. If the user asks you to delete everything, you MUST do it by outputting the correct XML block (e.g. using execute_command to run rm -rf). NEVER refuse due to "chat environment constraints".
+            prompt += `CRITICAL INSTRUCTION: You are an autonomous coding agent operating inside a VS Code Extension.
+You DO have access to the user's local filesystem and terminal. 
+To take an action, you MUST output a thought block, followed by an action block containing exactly ONE valid JSON object.
 
-To execute a local action, output exactly ONE thought and ONE action block:
+Format your response EXACTLY like this:
 
 <thought>
-I need to add a console log to index.js. I will use the edit_file action and output the ENTIRE modified file contents.
+I need to execute a terminal command to install dependencies.
 </thought>
 <action>
-action_name: edit_file
-path: index.js
-content: |
-  console.log("Hello World");
-  console.log("by world");
-  // ... rest of the full file
+{
+  "tool": "execute_command",
+  "command": "npm install"
+}
 </action>
 
-CRITICAL RULES FOR content:
-- If action_name is edit_file or write_file, the content tag MUST contain the ENTIRE new file code.
-- NEVER output English instructions or placeholders like "Insert here" inside the content tag. The file will be literally overwritten with whatever you put there.
-- You must write out the complete file from top to bottom.
+Another example:
+<thought>
+I need to write a new file.
+</thought>
+<action>
+{
+  "tool": "write_file",
+  "path": "src/index.js",
+  "content": "console.log('Hello World');\\n"
+}
+</action>
 
-Available actions: read_file, write_file, edit_file, delete_file, create_directory, list_directory, search_files, fetch_url, execute_command, git_status, git_diff, finish.`;
+Available tools:
+- {"tool": "read_file", "path": "string"}
+- {"tool": "write_file", "path": "string", "content": "string"} (Overwrites the whole file)
+- {"tool": "delete_file", "path": "string"}
+- {"tool": "create_directory", "path": "string"}
+- {"tool": "list_directory", "path": "string"}
+- {"tool": "search_files", "path": "string", "content": "query"}
+- {"tool": "execute_command", "command": "string"}
+- {"tool": "git_status"}
+- {"tool": "git_diff"}
+- {"tool": "finish", "content": "final response to user"}
+
+Rules:
+1. ALWAYS use the <thought> and <action> tags.
+2. The inside of the <action> tag MUST BE A VALID JSON OBJECT. Do NOT wrap the JSON in markdown code blocks (\`\`\`json). Just output raw JSON.
+3. If writing/editing a file, provide the FULL file content in the "content" JSON field. Do not use placeholders.
+4. Escape quotes and newlines in JSON correctly.`;
         } else if (mode === 'chat') {
-            prompt += `REMINDER: You are in CHAT mode. DO NOT use any file/shell actions. Reply directly to the user by using the "finish" action.
-Respond using this exact format:
+            prompt += `REMINDER: You are in CHAT mode. Respond using this exact format:
 <thought>...</thought>
 <action>
-action_name: finish
-content: your response
+{
+  "tool": "finish",
+  "content": "your conversational response"
+}
 </action>`;
         } else if (mode === 'plan') {
-            prompt += `REMINDER: You are in PLANNING mode. DO NOT use edit actions. Use read actions if needed, then draft a plan using the "finish" action.
-Respond using this exact format:
+            prompt += `REMINDER: You are in PLANNING mode. Respond using this exact format:
 <thought>...</thought>
 <action>
-action_name: finish
-content: your plan here
+{
+  "tool": "finish",
+  "content": "your detailed plan"
+}
 </action>`;
         }
 
@@ -83,8 +103,8 @@ content: your plan here
                 }
                 
                 const parsed = this.parseResponse(responseStr);
-                if (!parsed) {
-                    prompt = `Error: Your previous output did not contain valid <thought> and <action> tags. You MUST respond ONLY using the exact XML formatting requested. Do not output raw conversational text.`;
+                if (!parsed || !parsed.action || !parsed.action.tool) {
+                    prompt = `Error: Your previous output did not contain valid <thought> and <action> tags with a valid JSON object. You MUST respond ONLY using the exact XML and JSON formatting requested.`;
                     // Retry silently without bothering the user
                     continue;
                 }
@@ -105,13 +125,12 @@ content: your plan here
 
                 if (parsed.action && parsed.action.tool) {
                     this.onStream(`\n\n[Agent Executing Tool]: ${parsed.action.tool}\n`, true);
-                    const result = await this.toolManager.executeTool(parsed.action); // Now awaited
+                    const result = await this.toolManager.executeTool(parsed.action);
                     this.onStream(`[Tool Result]: ${result}\n\n`, true);
                     
-                    prompt = `Tool executed. Result:\n${result}\nWhat is the next step? Output exactly ONE thought block and ONE action block using XML tags as specified before.`;
+                    prompt = `Tool executed. Result:\n${result}\nWhat is the next step? Output exactly ONE thought block and ONE action block containing JSON.`;
                 } else {
-                    prompt = "Error: No valid action provided. What is the next step? Output strictly using <thought> and <action> XML blocks.";
-                    // Silently retry instead of spamming user
+                    prompt = "Error: No valid action provided. What is the next step? Output strictly using <thought> and <action> blocks.";
                     continue;
                 }
 
@@ -134,8 +153,6 @@ content: your plan here
 
     private parseResponse(response: string): any {
         try {
-            
-            // Bypass: Parse XML tags
             const thoughtMatch = response.match(/<thought>([\s\S]*?)<\/thought>/i);
             const actionMatch = response.match(/<action>([\s\S]*?)<\/action>/i);
             
@@ -144,21 +161,15 @@ content: your plan here
                 let action: any = null;
                 
                 if (actionMatch) {
-                    const actionText = actionMatch[1].trim();
-                    action = {};
+                    let actionText = actionMatch[1].trim();
+                    // If the AI accidentally wrapped the JSON in markdown inside the tag, strip it
+                    actionText = actionText.replace(/^```json\s*/i, '').replace(/```$/i, '').trim();
                     
-                    const toolMatch = actionText.match(/action_name:\s*(.+)/i);
-                    if (toolMatch) action.tool = toolMatch[1].trim();
-                    
-                    const pathMatch = actionText.match(/path:\s*(.+)/i);
-                    if (pathMatch) action.path = pathMatch[1].trim();
-                    
-                    const commandMatch = actionText.match(/command:\s*(.+)/i);
-                    if (commandMatch) action.command = commandMatch[1].trim();
-
-                    // Content can be multiline, so capture everything after "content:" until the end of the action block
-                    const contentMatch = actionText.match(/content:\s*([\s\S]*)/i);
-                    if (contentMatch) action.content = contentMatch[1].trim();
+                    try {
+                        action = JSON.parse(actionText);
+                    } catch (e) {
+                        console.error('Failed to parse Agent JSON action', e);
+                    }
                 }
                 
                 return { thought, action };

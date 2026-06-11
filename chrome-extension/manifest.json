@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "WebAgent Bridge",
+  "version": "1.0",
+  "description": "Connects VS Code WebAgent to your active AI web sessions (ChatGPT, Gemini, etc.)",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "tabs",
+    "storage"
+  ],
+  "host_permissions": [
+    "*://chatgpt.com/*",
+    "*://*.chatgpt.com/*",
+    "*://gemini.google.com/*",
+    "*://grok.com/*",
+    "*://chat.deepseek.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://chatgpt.com/*",
+        "*://*.chatgpt.com/*",
+        "*://gemini.google.com/*",
+        "*://grok.com/*",
+        "*://chat.deepseek.com/*"
+      ],
+      "js": ["content.js"]
+    }
+  ],
+  "action": {
+    "default_title": "WebAgent Bridge"
+  }
+}

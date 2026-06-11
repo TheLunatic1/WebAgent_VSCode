@@ -1,17 +1,15 @@
 import { AIProvider } from './AIProvider';
 import { WebSocketManager } from '../browser/WebSocketManager';
 
-export class ChatGPTProvider implements AIProvider {
+export class GrokProvider implements AIProvider {
     async isConnected(): Promise<boolean> {
         return WebSocketManager.getInstance().hasClients();
     }
 
     async createConversation(): Promise<void> {
-        // Handled by the Chrome Extension
     }
 
     async resetConversation(): Promise<void> {
-        // Handled by the Chrome Extension
     }
 
     async sendMessage(prompt: string): Promise<string> {
@@ -24,6 +22,6 @@ export class ChatGPTProvider implements AIProvider {
 
     async *streamMessage(prompt: string): AsyncGenerator<string> {
         const wsManager = WebSocketManager.getInstance();
-        yield* wsManager.streamMessage('chatgpt', prompt);
+        yield* wsManager.streamMessage('grok', prompt);
     }
 }

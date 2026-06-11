@@ -50,6 +50,8 @@
           "enum": [
             "chatgpt",
             "gemini",
+            "grok",
+            "deepseek",
             "ollama",
             "custom"
           ],
@@ -101,18 +103,19 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
-    "@types/vscode": "^1.80.0",
     "@types/node": "18.x",
+    "@types/vscode": "^1.80.0",
+    "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^6.4.0",
     "@typescript-eslint/parser": "^6.4.0",
     "eslint": "^8.47.0",
     "prettier": "^3.0.0",
+    "ts-loader": "^9.4.4",
     "typescript": "^5.1.6",
     "webpack": "^5.88.2",
-    "webpack-cli": "^5.1.4",
-    "ts-loader": "^9.4.4"
+    "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "playwright": "^1.37.0"
+    "ws": "^8.21.0"
   }
 }
